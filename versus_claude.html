@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Object Comparison Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: #f5f5f5;
+            overflow-x: hidden;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin: 10px 0 20px 0;
+            font-size: 24px;
+        }
+        .main-container {
+            display: flex;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            height: calc(100vh - 80px);
+        }
+        .left-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .coefficients-section {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .coefficients-section h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 16px;
+        }
+        .coefficient-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            gap: 10px;
+        }
+        .coefficient-label {
+            flex: 0 0 120px;
+            font-size: 12px;
+            color: #555;
+        }
+        .object-name-input {
+            border: 1px solid transparent;
+            background: transparent;
+            font-size: 16px;
+            font-weight: bold;
+            color: inherit;
+            padding: 2px 4px;
+            width: 100%;
+            border-radius: 3px;
+            transition: all 0.2s;
+            margin: 0;
+        }
+        .object-name-input:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        .object-name-input:focus {
+            outline: none;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-color: #4CAF50;
+            color: #333;
+        }
+        .feature-name-input {
+            border: 1px solid transparent;
+            background: transparent;
+            font-size: 12px;
+            color: #555;
+            padding: 2px 4px;
+            width: 100%;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+        .feature-name-input:hover {
+            background-color: #f0f0f0;
+            border-color: #ddd;
+        }
+        .feature-name-input:focus {
+            outline: none;
+            background-color: white;
+            border-color: #4CAF50;
+        }
+        .parameter-group .feature-name-input {
+            font-weight: 500;
+            margin-bottom: 3px;
+            display: block;
+        }
+        .coefficient-slider {
+            flex: 1;
+        }
+        .coefficient-value {
+            flex: 0 0 40px;
+            text-align: right;
+            font-weight: bold;
+            color: #333;
+            font-size: 12px;
+        }
+        .objects-container {
+            display: flex;
+            gap: 15px;
+            flex: 1;
+        }
+        .object-inputs {
+            flex: 1;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .object-inputs h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+        .parameter-group {
+            margin-bottom: 10px;
+        }
+        .parameter-group label {
+            display: block;
+            margin-bottom: 3px;
+            color: #555;
+            font-size: 12px;
+        }
+        .parameter-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .parameter-row input[type="range"] {
+            flex: 1;
+        }
+        .value-display {
+            min-width: 20px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .object1 h3 {
+            color: #FF6384;
+        }
+        .object2 h3 {
+            color: #36A2EB;
+        }
+        .right-panel {
+            flex: 0 0 450px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .chart-section {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            flex: 1;
+        }
+        #radarChart {
+            max-height: 350px;
+        }
+        .results-section {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .results-section h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            color: #333;
+        }
+        .calculate-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .calculate-btn:hover {
+            background-color: #45a049;
+        }
+        .score-display {
+            display: none;
+            margin-top: 10px;
+        }
+        .score-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .score-row.object1 {
+            background-color: rgba(255, 99, 132, 0.1);
+            color: #FF6384;
+        }
+        .score-row.object2 {
+            background-color: rgba(54, 162, 235, 0.1);
+            color: #36A2EB;
+        }
+        .score-value {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        input[type="range"] {
+            height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Object Comparison Tool</h1>
+    
+    <div class="main-container">
+        <div class="left-panel">
+            <div class="coefficients-section">
+                <h3>Feature Importance Coefficients (must sum to 1.0)</h3>                <div class="coefficient-row">
+                    <input type="text" class="feature-name-input coefficient-label" id="feature-name-performance" value="Emotional Valence" data-param="performance">:
+                    <input type="range" id="coef-performance" class="coefficient-slider" min="0" max="1" value="0.167" step="0.01">
+                    <span class="coefficient-value" id="coef-performance-value">0.17</span>
+                </div>
+                <div class="coefficient-row">
+                    <input type="text" class="feature-name-input coefficient-label" id="feature-name-appearance" value="Novelty" data-param="appearance">:
+                    <input type="range" id="coef-appearance" class="coefficient-slider" min="0" max="1" value="0.167" step="0.01">
+                    <span class="coefficient-value" id="coef-appearance-value">0.17</span>
+                </div>
+                <div class="coefficient-row">
+                    <input type="text" class="feature-name-input coefficient-label" id="feature-name-interestingness" value="Universality" data-param="interestingness">:
+                    <input type="range" id="coef-interestingness" class="coefficient-slider" min="0" max="1" value="0.167" step="0.01">
+                    <span class="coefficient-value" id="coef-interestingness-value">0.17</span>
+                </div>
+                <div class="coefficient-row">
+                    <input type="text" class="feature-name-input coefficient-label" id="feature-name-elegance" value="Utility" data-param="elegance">:
+                    <input type="range" id="coef-elegance" class="coefficient-slider" min="0" max="1" value="0.167" step="0.01">
+                    <span class="coefficient-value" id="coef-elegance-value">0.17</span>
+                </div>
+                <div class="coefficient-row">
+                    <input type="text" class="feature-name-input coefficient-label" id="feature-name-adaptability" value="Cost–Benefit Ratio" data-param="adaptability">:
+                    <input type="range" id="coef-adaptability" class="coefficient-slider" min="0" max="1" value="0.167" step="0.01">
+                    <span class="coefficient-value" id="coef-adaptability-value">0.17</span>
+                </div>
+                <div class="coefficient-row">
+                    <input type="text" class="feature-name-input coefficient-label" id="feature-name-achievability" value="Risk" data-param="achievability">:
+                    <input type="range" id="coef-achievability" class="coefficient-slider" min="0" max="1" value="0.165" step="0.01">
+                    <span class="coefficient-value" id="coef-achievability-value">0.15</span>
+                </div>
+                <div style="text-align: right; margin-top: 10px; font-size: 12px; color: #666;">
+                    Total: <span id="total-coefficient" style="font-weight: bold;">1.00</span>
+                </div>
+            </div>
+            
+            <div class="objects-container">                <div class="object-inputs object1">
+                    <h3><input type="text" class="object-name-input" id="object-name-obj1" value="Object 1" data-object="obj1"></h3><div class="parameter-group">
+                        <label class="feature-label" data-param="performance">Emotional Valence</label>
+                        <div class="parameter-row">
+                            <input type="range" id="obj1-performance" min="0" max="10" value="5" step="1">
+                            <span class="value-display" id="obj1-performance-value">5</span>
+                        </div>
+                    </div>
+                    <div class="parameter-group">
+                        <label class="feature-label" data-param="appearance">Novelty</label>
+                        <div class="parameter-row">
+                            <input type="range" id="obj1-appearance" min="0" max="10" value="5" step="1">
+                            <span class="value-display" id="obj1-appearance-value">5</span>
+                        </div>
+                    </div>
+                    <div class="parameter-group">
+                        <label class="feature-label" data-param="interestingness">Universality</label>
+                        <div class="parameter-row">
+                            <input type="range" id="obj1-interestingness" min="0" max="10" value="5" step="1">
+                            <span class="value-display" id="obj1-interestingness-value">5</span>
+                        </div>
+                    </div>
+                    <div class="parameter-group">
+                        <label class="feature-label" data-param="elegance">Utility</label>
+                        <div class="parameter-row">
+                            <input type="range" id="obj1-elegance" min="0" max="10" value="5" step="1">
+                            <span class="value-display" id="obj1-elegance-value">5</span>
+                        </div>
+                    </div>
+                    <div class="parameter-group">
+                        <label class="feature-label" data-param="adaptability">Cost–Benefit Ratio</label>
+                        <div class="parameter-row">
+                            <input type="range" id="obj1-adaptability" min="0" max="10" value="5" step="1">
+                            <span class="value-display" id="obj1-adaptability-value">5</span>
+                        </div>
+                    </div>
+                    <div class="parameter-group">
+                        <label class="feature-label" data-param="achievability">Risk</label>
+                        <div class="parameter-row">
+                            <input type="range" id="obj1-achievability" min="0" max="10" value="5" step="1">
+                            <span class="value-display" id="obj1-achievability-value">5</span>
+                        </div>
+                    </div>
+                </div>
+                  <div class="object-inputs object2">
+                    <h3><input type="text" class="object-name-input" id="object-name-obj2" value="Object 2" data-object="obj2"></h3><div class="parameter-group">
+                        <label class="feature-label" data-param="performance">Emotional Valence</label>
+                        <div class="parameter-row">
+                            <input type="range" id="obj2-performance" min="0" max="10" value="7" step="1">
+                            <span class="value-display" id="obj2-performance-value">7</span>
+                        </div>
+                    </div>
+                    <div class="parameter-group">
+                        <label class="feature-label" data-param="appearance">Novelty</label>
+                        <div class="parameter-row">
+                            <input type="range" id="obj2-appearance" min="0" max="10" value="6" step="1">
+                            <span class="value-display" id="obj2-appearance-value">6</span>
+                        </div>
+                    </div>
+                    <div class="parameter-group">
+                        <label class="feature-label" data-param="interestingness">Universality</label>
+                        <div class="parameter-row">
+                            <input type="range" id="obj2-interestingness" min="0" max="10" value="8" step="1">
+                            <span class="value-display" id="obj2-interestingness-value">8</span>
+                        </div>
+                    </div>
+                    <div class="parameter-group">
+                        <label class="feature-label" data-param="elegance">Utility</label>
+                        <div class="parameter-row">
+                            <input type="range" id="obj2-elegance" min="0" max="10" value="7" step="1">
+                            <span class="value-display" id="obj2-elegance-value">7</span>
+                        </div>
+                    </div>
+                    <div class="parameter-group">
+                        <label class="feature-label" data-param="adaptability">Cost–Benefit Ratio</label>
+                        <div class="parameter-row">
+                            <input type="range" id="obj2-adaptability" min="0" max="10" value="6" step="1">
+                            <span class="value-display" id="obj2-adaptability-value">6</span>
+                        </div>
+                    </div>
+                    <div class="parameter-group">
+                        <label class="feature-label" data-param="achievability">Risk</label>
+                        <div class="parameter-row">
+                            <input type="range" id="obj2-achievability" min="0" max="10" value="8" step="1">
+                            <span class="value-display" id="obj2-achievability-value">8</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="right-panel">
+            <div class="chart-section">
+                <canvas id="radarChart"></canvas>
+            </div>
+            
+            <div class="results-section">
+                <h3>Weighted Score Calculation</h3>
+                <button class="calculate-btn" onclick="calculateScores()">Calculate Scores</button>
+                <div class="score-display" id="scoreDisplay">                    <div class="score-row object1">
+                        <span class="object-score-label" data-object="obj1">Object 1 Score:</span>
+                        <span class="score-value" id="score1">-</span>
+                    </div>
+                    <div class="score-row object2">
+                        <span class="object-score-label" data-object="obj2">Object 2 Score:</span>
+                        <span class="score-value" id="score2">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>        // Initialize the chart
+        const ctx = document.getElementById('radarChart').getContext('2d');
+        const radarChart = new Chart(ctx, {
+            type: 'radar',
+            data: {                labels: [
+                    'EMOTIONAL VALENCE',
+                    'NOVELTY', 
+                    'UNIVERSALITY',
+                    'UTILITY',
+                    'COST–BENEFIT RATIO',
+                    'RISK'
+                ],                datasets: [{
+                    label: 'Object 1',
+                    data: [5, 5, 5, 5, 5, 5],
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(255, 99, 132, 1)'                }, {
+                    label: 'Object 2',
+                    data: [7, 6, 8, 7, 6, 8],
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(54, 162, 235, 1)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    r: {
+                        angleLines: {
+                            display: true,
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: 10,
+                        ticks: {
+                            stepSize: 2,
+                            font: {
+                                size: 10
+                            }
+                        },
+                        pointLabels: {
+                            font: {
+                                size: 11,
+                                weight: '500'
+                            },
+                            color: '#666'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 12
+                            },
+                            padding: 15
+                        }
+                    }
+                }
+            }
+        });        // Parameters
+        const parameters = ['performance', 'appearance', 'interestingness', 'elegance', 'adaptability', 'achievability'];
+        const objects = ['obj1', 'obj2'];        // Feature names storage
+        let featureNames = {
+            performance: 'Emotional Valence',
+            appearance: 'Novelty',
+            interestingness: 'Universality',
+            elegance: 'Utility',
+            adaptability: 'Cost–Benefit Ratio',
+            achievability: 'Risk'
+        };
+
+        // Object names storage
+        let objectNames = {
+            obj1: 'Object 1',
+            obj2: 'Object 2'
+        };        // Function to update feature name everywhere
+        function updateFeatureName(param, newName) {
+            featureNames[param] = newName;
+            
+            // Update all labels with this parameter
+            const labels = document.querySelectorAll(`.feature-label[data-param="${param}"]`);
+            labels.forEach(label => {
+                label.textContent = newName;
+            });
+            
+            // Update chart labels
+            const paramIndex = parameters.indexOf(param);
+            if (paramIndex !== -1) {
+                radarChart.data.labels[paramIndex] = newName.toUpperCase();
+                radarChart.update();
+            }
+        }
+
+        // Function to update object name everywhere
+        function updateObjectName(objectId, newName) {
+            objectNames[objectId] = newName;
+            
+            // Update chart dataset labels
+            if (objectId === 'obj1') {
+                radarChart.data.datasets[0].label = newName;
+            } else if (objectId === 'obj2') {
+                radarChart.data.datasets[1].label = newName;
+            }
+            radarChart.update();
+            
+            // Update score labels
+            const scoreLabels = document.querySelectorAll(`.object-score-label[data-object="${objectId}"]`);
+            scoreLabels.forEach(label => {
+                label.textContent = `${newName} Score:`;
+            });
+        }        // Add event listeners for feature name inputs
+        parameters.forEach(param => {
+            const input = document.getElementById(`feature-name-${param}`);
+            input.addEventListener('blur', function() {
+                const newName = this.value.trim();
+                if (newName && newName !== featureNames[param]) {
+                    updateFeatureName(param, newName);
+                }
+            });
+            
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    this.blur();
+                }
+            });
+        });
+
+        // Add event listeners for object name inputs
+        objects.forEach(obj => {
+            const input = document.getElementById(`object-name-${obj}`);
+            input.addEventListener('blur', function() {
+                const newName = this.value.trim();
+                if (newName && newName !== objectNames[obj]) {
+                    updateObjectName(obj, newName);
+                }
+            });
+            
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    this.blur();
+                }
+            });
+        });
+
+        // Coefficient management
+        let isUpdatingCoefficients = false;
+
+        function updateCoefficientDisplay() {
+            let total = 0;
+            parameters.forEach(param => {
+                const slider = document.getElementById(`coef-${param}`);
+                const value = parseFloat(slider.value);
+                const display = document.getElementById(`coef-${param}-value`);
+                display.textContent = value.toFixed(2);
+                total += value;
+            });
+            document.getElementById('total-coefficient').textContent = total.toFixed(2);
+        }
+
+        function adjustCoefficients(changedParam) {
+            if (isUpdatingCoefficients) return;
+            isUpdatingCoefficients = true;
+
+            const coefficients = {};
+            let total = 0;
+
+            // Get all current values
+            parameters.forEach(param => {
+                coefficients[param] = parseFloat(document.getElementById(`coef-${param}`).value);
+                total += coefficients[param];
+            });
+
+            // If sum is not 1, adjust other coefficients
+            if (Math.abs(total - 1.0) > 0.001) {
+                const difference = total - 1.0;
+                const otherParams = parameters.filter(p => p !== changedParam);
+                const otherSum = otherParams.reduce((sum, p) => sum + coefficients[p], 0);
+
+                if (otherSum > 0) {
+                    // Distribute the difference proportionally among other parameters
+                    otherParams.forEach(param => {
+                        const proportion = coefficients[param] / otherSum;
+                        coefficients[param] = Math.max(0, coefficients[param] - difference * proportion);
+                        coefficients[param] = Math.round(coefficients[param] * 100) / 100; // Round to 0.01
+                    });
+                } else {
+                    // If all others are 0, set the changed parameter to 1
+                    coefficients[changedParam] = 1.0;
+                }
+
+                // Update sliders
+                parameters.forEach(param => {
+                    document.getElementById(`coef-${param}`).value = coefficients[param];
+                });
+            }
+
+            updateCoefficientDisplay();
+            isUpdatingCoefficients = false;
+        }
+
+        // Add coefficient slider listeners
+        parameters.forEach(param => {
+            const slider = document.getElementById(`coef-${param}`);
+            slider.addEventListener('input', function() {
+                adjustCoefficients(param);
+            });
+        });
+
+        // Function to update chart data
+        function updateChart() {
+            const object1Data = parameters.map(param => 
+                parseInt(document.getElementById(`obj1-${param}`).value)
+            );
+            const object2Data = parameters.map(param => 
+                parseInt(document.getElementById(`obj2-${param}`).value)
+            );
+            
+            radarChart.data.datasets[0].data = object1Data;
+            radarChart.data.datasets[1].data = object2Data;
+            radarChart.update();
+        }
+
+        // Add event listeners to all parameter inputs
+        objects.forEach(obj => {
+            parameters.forEach(param => {
+                const input = document.getElementById(`${obj}-${param}`);
+                const valueDisplay = document.getElementById(`${obj}-${param}-value`);
+                
+                input.addEventListener('input', function() {
+                    valueDisplay.textContent = this.value;
+                    updateChart();
+                });
+            });
+        });
+
+        // Calculate scores function
+        function calculateScores() {
+            let score1 = 0;
+            let score2 = 0;
+
+            parameters.forEach(param => {
+                const coef = parseFloat(document.getElementById(`coef-${param}`).value);
+                const val1 = parseInt(document.getElementById(`obj1-${param}`).value);
+                const val2 = parseInt(document.getElementById(`obj2-${param}`).value);
+                
+                score1 += coef * val1;
+                score2 += coef * val2;
+            });
+
+            document.getElementById('score1').textContent = score1.toFixed(2);
+            document.getElementById('score2').textContent = score2.toFixed(2);
+            document.getElementById('scoreDisplay').style.display = 'block';
+        }        // Initial updates
+        updateCoefficientDisplay();
+        updateChart();
+        
+        // Initialize chart labels with current feature names
+        radarChart.data.labels = parameters.map(param => featureNames[param].toUpperCase());
+        radarChart.data.datasets[0].label = objectNames.obj1;
+        radarChart.data.datasets[1].label = objectNames.obj2;
+        radarChart.update();
+        
+        // Initialize object score labels
+        document.querySelector('.object-score-label[data-object="obj1"]').textContent = `${objectNames.obj1} Score:`;
+        document.querySelector('.object-score-label[data-object="obj2"]').textContent = `${objectNames.obj2} Score:`;
+    </script>
+</body>
+</html>
